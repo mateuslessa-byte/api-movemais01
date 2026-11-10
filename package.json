@@ -4,7 +4,8 @@
   "description": "Projeto da Turma 105116",
   "main": "index.js",
   "scripts": {
-    "start": "node src/serve.js",
+    "start": "tsx server.ts",
+    "dev": "tsx watch server.ts",
     "test": "tsx \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -20,6 +21,7 @@
   "dependencies": {
     "dotenv": "^18.0.9",
     "express": "^5.3.0",
+    "mongoose": "^9.12.1",
     "nodemon": "^3.1.14"
   },
   "devDependencies": {

@@ -27,7 +27,11 @@ const livros: Livro[] = [
   },
 ];
 
-function buscaLivro(id: string | number): number {
+function buscaLivro(id: string | string[] | undefined): number {
+  if (typeof id !== "string") {
+    return -1;
+  }
+
   return livros.findIndex((livro) => livro.id === Number(id));
 }
 
