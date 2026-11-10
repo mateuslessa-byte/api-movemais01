@@ -6,6 +6,7 @@ import app from "./src/app.js";
 async function iniciaServidor(): Promise<void> {
   try {
     const conexao = await conectaAoBancoDeDados();
+    
     conexao.on("error", (erro: Error) => {
       console.error("Erro durante a conexão com o banco de dados:", erro);
     });
@@ -18,8 +19,9 @@ async function iniciaServidor(): Promise<void> {
     });
   } catch (erro) {
     console.error("Falha ao conectar ao banco de dados:", erro);
-    process.exit(1);
   }
+    process.exit(1);
+    ''
 }
 
 void iniciaServidor();
