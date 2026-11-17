@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, type Model } from "mongoose";
 
 export interface Livro {
   title: string;
@@ -11,16 +11,18 @@ export interface Livro {
 
 const livroSchema = new Schema<Livro>(
   {
-    title: { type: String, required: true },
-    author: { type: String, required: true },
+    title: { type: String, required: true, trim: true },
+    author: { type: String, required: true, trim: true },
     ano_pub: { type: Number, required: true },
-    publisher: { type: String, required: true },
-    genre: { type: String, required: true },
-    page: { type: Number, required: true },
+    publisher: { type: String, required: true, trim: true },
+    genre: { type: String, required: true, trim: true },
+    page: { type: Number, required: true, min: 1 },
   },
   { versionKey: false },
 );
 
-const LivroModel = mongoose.model<Livro>("Livro", livroSchema);
+const LivroModel =
+  (mongoose.models.Livro as Model<Livro> | undefined) ??
+  mongoose.model<Livro>("Livro", livroSchema);
 
 export default LivroModel;
