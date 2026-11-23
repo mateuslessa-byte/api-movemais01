@@ -1,130 +1,278 @@
-Atue como um desenvolvedor backend Node.js/TypeScript.
-Gere um arquivo TypeScript que exporta uma constante `swaggerDocument` no padrão
-OpenAPI 3.0.0 com a documentação completa das rotas, parâmetros de rota, query
-params, requestBody (com exemplos válidos baseados no Zod) e respostas (200, 201,
-400, 404, 500) a partir dos arquivos abaixo.
-Retorne apenas o código TypeScript válido, sem explicações extras.
-import { Router } from "express";
-
-import LivroController from "../src/controlles/livroControles.js";
-
-import { validardados } from "../src/middilewares/dataValidator.js";
-
-import { criarLivroValidator, atualizarLivroValidator } from "../src/middilewares/dataValidator.js";
-
-//inicializar o gerenciador de rotas
-const router = Router();
-
-//rotas
-router.get("/Livros", LivroController.listar);
-router.get("/Livros/buscar", LivroController.buscarPorFiltro);
-
-// - rotas
-router.get("/Livros/:id", LivroController.buscarPorId);
-
-// 3 - rotas de escrita
-router.get("/", LivroController.listar);
-router.get("/:id", LivroController.buscarPorId);
-router.post("/livros/:id", validarDados(criarLivroValidator), LivroController.cadastrar);
-router.put("/:id", LivroController.atualizar);
-router.delete("/:id", LivroController.deletar);
-
-//exportar as rotas
-export default router;
-
-import type { Request, Response } from "express";
-import mongoose from "mongoose";
-import LivroModel from "../models/Livro.js";
-
-async function listar(_req: Request, res: Response): Promise<void> {
-  const livros = await LivroModel.find();
-  res.status(200).json(livros);
-}
-
-async function buscarPorId(
-  req: Request<{ id: string }>,
-  res: Response,
-): Promise<void> {
-  const { id } = req.params;
-
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    res.status(400).json({ mensagem: "ID de livro inválido." });
-    return;
-  }
-
-  const livro = await LivroModel.findById(id);
-
-  if (!livro) {
-    res.status(404).json({ mensagem: "Livro não encontrado!" });
-    return;
-  }
-
-  res.status(200).json(livro);
-}
-
-async function cadastrar(req: Request, res: Response): Promise<void> {
-  const livro = await LivroModel.create(req.body);
-
-  res.status(201).json({
-    mensagem: "Livro cadastrado com sucesso!",
-    livro,
-  });
-}
-
-async function atualizar(
-  req: Request<{ id: string }>,
-  res: Response,
-): Promise<void> {
-  const { id } = req.params;
-
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    res.status(400).json({ mensagem: "ID de livro inválido." });
-    return;
-  }
-
-  const livro = await LivroModel.findByIdAndUpdate(id, req.body, {
-    new: true,
-    runValidators: true,
-  });
-
-  if (!livro) {
-    res.status(404).json({ mensagem: "Livro não encontrado!" });
-    return;
-  }
-
-  res.status(200).json({
-    mensagem: "Livro atualizado com sucesso!",
-    livro,
-  });
-}
-
-async function deletar(
-  req: Request<{ id: string }>,
-  res: Response,
-): Promise<void> {
-  const { id } = req.params;
-
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    res.status(400).json({ mensagem: "ID de livro inválido." });
-    return;
-  }
-
-  const livro = await LivroModel.findByIdAndDelete(id);
-
-  if (!livro) {
-    res.status(404).json({ mensagem: "Livro não encontrado!" });
-    return;
-  }
-
-  res.status(200).json({ mensagem: "Livro removido com sucesso!" });
-}
-
-const LivroController = {
-  listar,
-  buscarPorId,
-  cadastrar,
-  atualizar,
-  deletar,
+export const swaggerDocument = {
+  openapi: "3.0.0",
+  info: {
+    title: "API de Gerenciamento de Livros",
+    version: "1.0.0",
+    description:
+      "Documentação completa da API REST para consulta, cadastro, atualização e remoção de livros.",
+  },
+  servers: [
+    {
+      url: "http://localhost:3000",
+      description: "Servidor de Desenvolvimento",
+    },
+  ],
+  tags: [
+    {
+      name: "Livros",
+      description: "Operações relacionadas ao catálogo de livros",
+    },
+  ],
+  paths: {
+    "/Livros": {
+      get: {
+        tags: ["Livros"],
+        summary: "Listar todos os livros",
+        description: "Retorna a lista completa de livros cadastrados (LivroController.listar).",
+        parameters: [
+          {
+            name: "pagina",
+            in: "query",
+            required: false,
+            description: "Número da página para paginação",
+            schema: {
+              type: "integer",
+              minimum: 1,
+              default: 1,
+            },
+            example: 1,
+          },
+          {
+            name: "limite",
+            in: "query",
+            required: false,
+            description: "Quantidade máxima de registros por página",
+            schema: {
+              type: "integer",
+              minimum: 1,
+              maximum: 100,
+              default: 10,
+            },
+            example: 10,
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Lista de livros retornada com sucesso",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "array",
+                  items: {
+                    $ref: "#/components/schemas/Livro",
+                  },
+                },
+              },
+            },
+          },
+          "400": {
+            $ref: "#/components/responses/BadRequest",
+          },
+          "500": {
+            $ref: "#/components/responses/InternalServerError",
+          },
+        },
+      },
+    },
+    "/Livros/buscar": {
+      get: {
+        tags: ["Livros"],
+        summary: "Buscar livros por filtro",
+        description:
+          "Filtra livros por título, autor ou editora via parâmetros de consulta (LivroController.buscarPorFiltro).",
+        parameters: [
+          {
+            name: "titulo",
+            in: "query",
+            required: false,
+            description: "Título (ou trecho do título) do livro",
+            schema: {
+              type: "string",
+            },
+            example: "Dom Casmurro",
+          },
+          {
+            name: "autor",
+            in: "query",
+            required: false,
+            description: "Nome do autor do livro",
+            schema: {
+              type: "string",
+            },
+            example: "Machado de Assis",
+          },
+          {
+            name: "editora",
+            in: "query",
+            required: false,
+            description: "Nome da editora",
+            schema: {
+              type: "string",
+            },
+            example: "Companhia das Letras",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Livros encontrados conforme os filtros informados",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "array",
+                  items: {
+                    $ref: "#/components/schemas/Livro",
+                  },
+                },
+              },
+            },
+          },
+          "400": {
+            $ref: "#/components/responses/BadRequest",
+          },
+          "404": {
+            $ref: "#/components/responses/NotFound",
+          },
+          "500": {
+            $ref: "#/components/responses/InternalServerError",
+          },
+        },
+      },
+    },
+    "/Livros/{id}": {
+      get: {
+        tags: ["Livros"],
+        summary: "Buscar livro por ID",
+        description: "Retorna os detalhes de um livro específico pelo seu ID (LivroController.buscarPorId).",
+        parameters: [
+          {
+            $ref: "#/components/parameters/LivroIdParam",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Livro encontrado com sucesso",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/Livro",
+                },
+              },
+            },
+          },
+          "400": {
+            $ref: "#/components/responses/BadRequest",
+          },
+          "404": {
+            $ref: "#/components/responses/NotFound",
+          },
+          "500": {
+            $ref: "#/components/responses/InternalServerError",
+          },
+        },
+      },
+    },
+    "/": {
+      get: {
+        tags: ["Livros"],
+        summary: "Listar todos os livros (rota raiz)",
+        description: "Rota alternativa na raiz que retorna todos os livros cadastrados (LivroController.listar).",
+        parameters: [
+          {
+            name: "pagina",
+            in: "query",
+            required: false,
+            description: "Número da página para paginação",
+            schema: {
+              type: "integer",
+              minimum: 1,
+              default: 1,
+            },
+            example: 1,
+          },
+          {
+            name: "limite",
+            in: "query",
+            required: false,
+            description: "Quantidade máxima de registros por página",
+            schema: {
+              type: "integer",
+              minimum: 1,
+              maximum: 100,
+              default: 10,
+            },
+            example: 10,
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Lista de livros retornada com sucesso",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "array",
+                  items: {
+                    $ref: "#/components/schemas/Livro",
+                  },
+                },
+              },
+            },
+          },
+          "400": {
+            $ref: "#/components/responses/BadRequest",
+          },
+          "500": {
+            $ref: "#/components/responses/InternalServerError",
+          },
+        },
+      },
+    },
+    "/{id}": {
+      get: {
+        tags: ["Livros"],
+        summary: "Buscar livro por ID (rota raiz)",
+        description: "Rota alternativa na raiz para buscar um livro pelo seu ID (LivroController.buscarPorId).",
+        parameters: [
+          {
+            $ref: "#/components/parameters/LivroIdParam",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Livro encontrado com sucesso",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/Livro",
+                },
+              },
+            },
+          },
+          "400": {
+            $ref: "#/components/responses/BadRequest",
+          },
+          "404": {
+            $ref: "#/components/responses/NotFound",
+          },
+          "500": {
+            $ref: "#/components/responses/InternalServerError",
+          },
+        },
+      },
+      put: {
+        tags: ["Livros"],
+        summary: "Atualizar livro",
+        responses: {
+          "200": {
+            description: "Livro atualizado com sucesso",
+          },
+          "400": {
+            description: "Dados inválidos",
+          },
+          "404": {
+            description: "Livro não encontrado",
+          },
+        },
+      },
+    },
+  },
 };
-
-export default LivroController;

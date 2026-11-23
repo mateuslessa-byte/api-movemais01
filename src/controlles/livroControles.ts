@@ -7,6 +7,32 @@ async function listar(_req: Request, res: Response): Promise<void> {
   res.status(200).json(livros);
 }
 
+async function buscarPorFiltro(
+  req: Request<
+    Record<string, never>,
+    unknown,
+    unknown,
+    { titulo?: string; autor?: string; editora?: string }
+  >,
+  res: Response,
+): Promise<void> {
+  const filtros = [
+    ["title", req.query.titulo],
+    ["author", req.query.autor],
+    ["publisher", req.query.editora],
+  ] as const;
+  const consulta = Object.fromEntries(
+    filtros
+      .filter(([, valor]) => valor)
+      .map(([campo, valor]) => [
+        campo,
+        new RegExp(valor!.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"),
+      ]),
+  );
+  const livros = await LivroModel.find(consulta);
+  res.status(200).json(livros);
+}
+
 async function buscarPorId(
   req: Request<{ id: string }>,
   res: Response,
@@ -87,6 +113,7 @@ async function deletar(
 
 const LivroController = {
   listar,
+  buscarPorFiltro,
   buscarPorId,
   cadastrar,
   atualizar,
