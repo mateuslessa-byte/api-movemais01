@@ -22,6 +22,9 @@ export interface ILivroRepository {
   buscarPorFiltro(filtros: FiltroLivroDTO): Promise<Livro[]>;
   cadastrar(dados: LivroDTO): Promise<Livro>;
   atualizar(id: string, dados: LivroDTO): Promise<Livro | null>;
-  atualizarParcial( id: string, dados: Partial<LivroDTO>,  ): Promise<Livro | null>;
+  atualizarParcial(
+    id: string,
+    dados: Partial<LivroDTO>,
+  ): Promise<Livro | null>;
   deletar(id: string): Promise<boolean>;
 }
